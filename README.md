@@ -20,7 +20,7 @@ Dự án xây dựng hệ thống điều khiển đèn giao thông tại giao l
 
 | Thành viên | Tài khoản GitHub | Phụ trách |
 |---|---|---|
-| Nghĩa Hiệp | [USERNAME_CUA_BAN](https://github.com/USERNAME_CUA_BAN) | Thiết kế giao diện giữa các module, bộ lập lịch, bộ định thời phần mềm, tích hợp firmware và chốt phiên bản mã nguồn nộp. |
+| Nghĩa Hiệp | [benhiepcse](https://github.com/benhiepcse) | Thiết kế giao diện giữa các module, bộ lập lịch, bộ định thời phần mềm, tích hợp firmware và chốt phiên bản mã nguồn nộp. |
 | Thế Thông | [thth0ng](https://github.com/thth0ng) | Khởi tạo project STM32CubeIDE, cấu hình phần cứng, triển khai module đèn, nút nhấn, DHT20 và LCD, kiểm thử trên board. |
 | Nhân Nguyễn | [NguyenTrongNhan2006](https://github.com/NguyenTrongNhan2006) | Thiết kế và triển khai các máy trạng thái, xây dựng tiêu chí nghiệm thu, kiểm thử chuyển chế độ và tổng hợp báo cáo. |
 
