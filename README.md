@@ -88,6 +88,8 @@ Hướng dẫn này sẽ được cập nhật với tên project thực tế v�
 
 Bảng thao tác chính thức sẽ được điền sau khi nhóm chốt thiết kế FSM và kiểm tra trên board.
 
+Xem [CO3009-06 — Thiết kế FSM Sprint 1](docs/sprint-01/co3009-06-fsm-design.md) để review phương án nút nhấn, các pha đèn và quy tắc chuyển chế độ.
+
 | Nội dung | Thông tin cần cập nhật |
 |---|---|
 | Khởi động hoặc reset | Chế độ khởi động và màu đèn của cả hai đường |
