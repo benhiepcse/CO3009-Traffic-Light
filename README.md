@@ -127,3 +127,4 @@ Các nhóm ca kiểm thử dự kiến:
 | Tag và mã commit nộp | Cập nhật sau khi nghiệm thu bản chạy trên board |
 | Báo cáo PDF | Soạn theo mẫu `Template_Report_BTL_CO3009.docx` |
 | Tài liệu yêu cầu | `Project_Announcement_CO3009.pdf` |
+| Nghiệm thu Sprint 1 | [CO3009-05 — Ma trận yêu cầu và kịch bản nghiệm thu](docs/sprint-01/co3009-05-acceptance.md) |
