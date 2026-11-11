@@ -82,11 +82,13 @@ void SCH_Dispatch_Tasks(void)
 
 static uint32_t timer_remaining;
 static bool timer_expired;
+static bool timer_start_fails;
 
 void sw_timer_init(void)
 {
     timer_remaining = 0;
     timer_expired = false;
+    timer_start_fails = false;
 }
 
 void sw_timer_tick(void)
@@ -102,6 +104,10 @@ void sw_timer_tick(void)
 bool sw_timer_start(sw_timer_id_t id, uint32_t duration_ticks)
 {
     if (id != SW_TIMER_TRAFFIC_PHASE || duration_ticks == 0) {
+        return false;
+    }
+    if (timer_start_fails) {
+        timer_start_fails = false;
         return false;
     }
 
@@ -130,12 +136,20 @@ bool sw_timer_take_timeout(sw_timer_id_t id)
     return true;
 }
 
-static button_event_t pending_button_event;
-static bool button_event_pending;
+void mock_fail_next_timer_start(void)
+{
+    timer_start_fails = true;
+}
+
+enum { MOCK_BUTTON_CAPACITY = 8 };
+static button_event_t button_events[MOCK_BUTTON_CAPACITY];
+static unsigned button_head;
+static unsigned button_count;
 
 void button_init(void)
 {
-    button_event_pending = false;
+    button_head = 0;
+    button_count = 0;
 }
 
 void button_poll(void)
@@ -144,32 +158,35 @@ void button_poll(void)
 
 void mock_button_inject(button_event_t event)
 {
-    if (!button_event_pending) {
-        pending_button_event = event;
-        button_event_pending = true;
+    if (button_count < MOCK_BUTTON_CAPACITY) {
+        button_events[(button_head + button_count) % MOCK_BUTTON_CAPACITY] = event;
+        ++button_count;
     }
 }
 
 bool button_take_event(button_event_t *out)
 {
-    if (out == NULL || !button_event_pending) {
+    if (out == NULL || button_count == 0) {
         return false;
     }
 
-    *out = pending_button_event;
-    button_event_pending = false;
+    *out = button_events[button_head];
+    button_head = (button_head + 1) % MOCK_BUTTON_CAPACITY;
+    --button_count;
     return true;
 }
 
 void button_clear_events(void)
 {
-    button_event_pending = false;
+    button_head = 0;
+    button_count = 0;
 }
 
 static traffic_color_t road1_color;
 static traffic_color_t road2_color;
 static uint32_t pair_requests;
 static uint32_t dual_green_requests;
+static bool traffic_pair_fails;
 
 void traffic_init(void)
 {
@@ -177,6 +194,7 @@ void traffic_init(void)
     road2_color = TRAFFIC_RED;
     pair_requests = 0;
     dual_green_requests = 0;
+    traffic_pair_fails = false;
 }
 
 static bool traffic_color_is_valid(traffic_color_t color)
@@ -193,6 +211,10 @@ bool traffic_set_pair(traffic_color_t road1, traffic_color_t road2)
         return false;
     }
     if (!traffic_color_is_valid(road1) || !traffic_color_is_valid(road2)) {
+        return false;
+    }
+    if (traffic_pair_fails) {
+        traffic_pair_fails = false;
         return false;
     }
 
@@ -221,11 +243,18 @@ uint32_t mock_traffic_dual_green_requests(void)
     return dual_green_requests;
 }
 
+void mock_fail_next_traffic_pair(void)
+{
+    traffic_pair_fails = true;
+}
+
 static dht20_status_t sensor_status;
+static dht20_sample_t sensor_sample;
 
 void dht20_init(void)
 {
     sensor_status = DHT20_NO_SAMPLE;
+    sensor_sample = (dht20_sample_t){ 253, 654 };
 }
 
 void dht20_poll(void)
@@ -240,11 +269,17 @@ dht20_status_t dht20_get_latest(dht20_sample_t *out)
     }
 
     if (sensor_status == DHT20_OK) {
-        out->temperature_x10 = 253;
-        out->humidity_x10 = 654;
+        *out = sensor_sample;
     }
 
     return sensor_status;
+}
+
+void mock_dht20_sample(dht20_status_t status, int16_t temperature_x10,
+                        uint16_t humidity_x10)
+{
+    sensor_status = status;
+    sensor_sample = (dht20_sample_t){ temperature_x10, humidity_x10 };
 }
 
 enum {
@@ -254,6 +289,8 @@ enum {
 
 static char lcd_lines[MOCK_LCD_ROWS][MOCK_LCD_COLUMNS + 1];
 static bool lcd_ready;
+static bool lcd_write_fails;
+static uint32_t lcd_write_requests;
 
 bool lcd_init(void)
 {
@@ -263,12 +300,19 @@ bool lcd_init(void)
     }
 
     lcd_ready = true;
+    lcd_write_fails = false;
+    lcd_write_requests = 0;
     return true;
 }
 
 bool lcd_write_line(uint8_t row, const char *text)
 {
+    ++lcd_write_requests;
     if (!lcd_ready || row >= MOCK_LCD_ROWS || text == NULL) {
+        return false;
+    }
+    if (lcd_write_fails) {
+        lcd_write_fails = false;
         return false;
     }
 
@@ -289,6 +333,16 @@ const char *mock_lcd_line(uint8_t row)
     }
 
     return lcd_lines[row];
+}
+
+uint32_t mock_lcd_write_requests(void)
+{
+    return lcd_write_requests;
+}
+
+void mock_fail_next_lcd_write(void)
+{
+    lcd_write_fails = true;
 }
 
 #ifndef MOCK_MODULES_USE_REAL_FSM

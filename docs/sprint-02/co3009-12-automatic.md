@@ -24,18 +24,14 @@ stateDiagram-v2
 | `A_Y2` | Đỏ | Vàng | 200 tick | `A_RR21` |
 | `A_RR21` | Đỏ | Đỏ | 100 tick | `A_G1` |
 
-Sau khi khởi tạo driver đèn, nút và timer, `fsm_init()` hủy timer cũ, xóa sự kiện nút và bắt đầu pha cả hai đỏ lúc khởi động. Scheduler gọi `fsm_run()` định kỳ. Khi cùng đến hạn, `sw_timer_tick()` chạy trước `fsm_run()` để pha vừa bắt đầu chỉ bị trừ từ tick kế tiếp. FSM đọc timeout bằng `sw_timer_take_timeout()`, đặt cặp đèn qua `traffic_set_pair()` rồi nạp timer cho pha mới. Nếu dispatch trễ, mỗi lần chỉ chuyển một pha để giữ đủ khoảng vàng và cả hai đỏ. Mã 12 dùng cấu hình mặc định và bỏ sự kiện nút. Hành vi nút chuyển chế độ thuộc CO3009-15.
+Sau khi khởi tạo các module, `fsm_init()` khôi phục cấu hình mặc định, xóa sự kiện nút và bắt đầu pha cả hai đỏ lúc khởi động. Scheduler gọi `fsm_run()` định kỳ. Khi cùng đến hạn, `sw_timer_tick()` chạy trước `fsm_run()` để pha vừa bắt đầu chỉ bị trừ từ tick kế tiếp. FSM đọc timeout bằng `sw_timer_take_timeout()`, đặt cặp đèn qua `fsm_set_phase()` rồi nạp timer cho pha mới. Nếu dispatch trễ, mỗi lần chỉ chuyển một pha để giữ đủ khoảng vàng và cả hai đỏ. Sau khi tích hợp mã 14–15, Auto đọc cấu hình chạy dùng chung và bộ điều phối xử lý nút chuyển mode theo [tài liệu Sprint 3](../sprint-03/co3009-13-15-fsm.md).
 
 ## Kiểm thử trên máy tính
 
 Chạy từ thư mục gốc của repo với GCC và PowerShell.
 
 ```powershell
-$testExe = Join-Path $env:TEMP 'co3009-12-automatic.exe'
-gcc -std=c11 -Wall -Wextra -Werror -pedantic -DMOCK_MODULES_USE_REAL_FSM -ICore/Inc `
-    Core/Src/fsm.c Core/Src/fsm_automatic.c tests/host/mock_modules.c `
-    tests/host/fsm_automatic_test.c -o $testExe
-if ($LASTEXITCODE -eq 0) { & $testExe }
+.\tests\host\test.ps1
 ```
 
 | Ca | Bằng chứng từ test host |

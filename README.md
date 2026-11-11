@@ -50,6 +50,8 @@ Bảng ánh xạ chân Arduino sang chân STM32, mức logic khi nhấn, tổ h�
 
 [CO3009-12 — Chế độ Automatic](docs/sprint-02/co3009-12-automatic.md) mô tả các pha đèn, thời lượng và cách chạy kiểm thử trên máy tính.
 
+[CO3009-13 đến CO3009-15 — Manual, Tuning và chuyển mode](docs/sprint-03/co3009-13-15-fsm.md) mô tả phần điều khiển ba chế độ, cấu hình dùng chung và bộ test host. Chạy `tests/host/test.ps1` bằng PowerShell với GCC để kiểm tra logic FSM.
+
 Cấu trúc dự kiến sau khi tích hợp project STM32CubeIDE:
 
 ```text
@@ -88,17 +90,17 @@ Hướng dẫn này sẽ được cập nhật với tên project thực tế v�
 
 ## 6. Vận hành và kiểm thử
 
-Bảng thao tác chính thức sẽ được điền sau khi nhóm chốt thiết kế FSM và kiểm tra trên board.
+Bảng thao tác dưới đây được hiện thực và kiểm tra bằng mock. Nghiệm thu trên board thực hiện khi tích hợp scheduler và driver thật.
 
 Xem [CO3009-06 — Thiết kế FSM Sprint 1](docs/sprint-01/co3009-06-fsm-design.md) để review phương án nút nhấn, các pha đèn và quy tắc chuyển chế độ.
 
-| Nội dung | Thông tin cần cập nhật |
+| Nội dung | Hành vi |
 |---|---|
-| Khởi động hoặc reset | Chế độ khởi động và màu đèn của cả hai đường |
-| Chuyển chế độ | Nút hoặc sự kiện kích hoạt từng lần chuyển |
-| Điều khiển thủ công | Chức năng của từng nút trong chế độ Manual |
-| Chỉnh thời lượng | Nút chọn màu, tăng hoặc giảm, xác nhận và cách LCD báo giá trị sai |
-| Hiển thị môi trường | Chu kỳ đọc DHT20 và cách LCD hiển thị nhiệt độ, độ ẩm |
+| Khởi động hoặc reset | Cả hai đỏ 1 s, rồi Auto bắt đầu xanh đường 1. Mặc định đỏ 9 s, xanh 5 s, vàng 2 s. |
+| Chuyển chế độ | D7 chuyển Auto → Manual → Tuning → Auto. Trước khi vào mode mới, đi qua vàng nếu cần và cả hai đỏ 1 s. |
+| Điều khiển thủ công | D8 cấp quyền đi hoặc yêu cầu đổi đường. Vàng và khoảng cả hai đỏ được giữ đủ thời lượng. |
+| Chỉnh thời lượng | D8 chọn đỏ/xanh/vàng, D9 tăng, D10 giảm, D7 xác nhận. Giá trị sai giữ nguyên Tuning và hiển thị lỗi. |
+| Hiển thị môi trường | Auto/Manual hiển thị mẫu DHT20 đã lưu. Tuning và các pha chuyển giữ nội dung riêng trên LCD. Chu kỳ đo thật được chốt khi tích hợp driver. |
 
 Các nhóm ca kiểm thử dự kiến:
 

@@ -157,9 +157,15 @@ Nhân đổi thời lượng các pha đèn sang tick trước khi đặt timer 
 - `tests/host/mock_modules.c` cung cấp bản giả lập tối thiểu cho smoke test.
 - `tests/host/api_smoke.c` kiểm tra cách gọi các API trong bảy header.
 - Mock dùng cấu hình kiểm thử 2 dòng LCD, mỗi dòng 16 ký tự,
-  một mẫu DHT20 cố định và một ô chờ sự kiện nút.
+  mẫu DHT20 có thể thay đổi và hàng đợi tối đa 8 sự kiện nút.
 - FSM trong mock chỉ minh họa luồng D7 -> đặt cặp màu và được scheduler
   gọi làm one-shot. Thiết kế chế độ thật được bàn giao ở các task FSM.
 - Khi build firmware STM32, chỉ liên kết phần triển khai thật.
   Thư mục `tests/host/` dành cho chương trình kiểm tra trên máy tính.
 - Ba thành viên review giao diện trước khi merge vào `dev`.
+
+Sau khi tích hợp mã 13–15, chạy `tests/host/test.ps1` để kiểm tra toàn bộ
+FSM thật và smoke test API. Các build dùng `MOCK_MODULES_USE_REAL_FSM` bỏ
+hai hàm FSM giả trong `mock_modules.c` và liên kết các file thật trong
+`Core/Src`. Xem [tài liệu Sprint 3](sprint-03/co3009-13-15-fsm.md) cho cấu
+hình thời lượng dùng chung, thao tác nút và luồng chuyển mode.
