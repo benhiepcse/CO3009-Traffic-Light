@@ -36,6 +36,8 @@ Khi đường 1 đỏ, hệ thống đi qua `R/R → R/G → R/Y → R/R`. Do đ
 
 ```mermaid
 stateDiagram-v2
+    state "BOOT_RR - R/R" as BOOT_RR
+    state "TUNING - R/R" as TUNING
     [*] --> BOOT_RR
     BOOT_RR --> AUTO: Het 1 s ca hai do
     AUTO --> SWITCH: B1 dat dich MANUAL
@@ -64,6 +66,12 @@ Ví dụ với bộ mặc định, Nhân có thể thử B1 lúc Auto đang `G/R
 
 ```mermaid
 stateDiagram-v2
+    state "A_G1 - G/R" as A_G1
+    state "A_Y1 - Y/R" as A_Y1
+    state "A_RR12 - R/R" as A_RR12
+    state "A_G2 - R/G" as A_G2
+    state "A_Y2 - R/Y" as A_Y2
+    state "A_RR21 - R/R" as A_RR21
     [*] --> A_G1
     A_G1 --> A_Y1: Het G
     A_Y1 --> A_RR12: Het Y
@@ -88,6 +96,13 @@ Chỉ áp dụng đèn và nạp timer **khi vào pha**, không nạp lại ở 
 
 ```mermaid
 stateDiagram-v2
+    state "M_WAIT - R/R" as M_WAIT
+    state "M_G1 - G/R" as M_G1
+    state "M_Y1 - Y/R" as M_Y1
+    state "M_RR12 - R/R" as M_RR12
+    state "M_G2 - R/G" as M_G2
+    state "M_Y2 - R/Y" as M_Y2
+    state "M_RR21 - R/R" as M_RR21
     [*] --> M_WAIT
     M_WAIT --> M_G1: B2
     M_G1 --> M_Y1: B2
@@ -114,6 +129,9 @@ Manual giữ xanh cho đến khi người dùng yêu cầu đổi đường. B2 
 
 ```mermaid
 stateDiagram-v2
+    state "EDIT_R - R/R" as EDIT_R
+    state "EDIT_G - R/R" as EDIT_G
+    state "EDIT_Y - R/R" as EDIT_Y
     [*] --> EDIT_R
     EDIT_R --> EDIT_G: B2
     EDIT_G --> EDIT_Y: B2
@@ -121,6 +139,9 @@ stateDiagram-v2
     EDIT_R --> EDIT_R: B3 hoac B4
     EDIT_G --> EDIT_G: B3 hoac B4
     EDIT_Y --> EDIT_Y: B3 hoac B4
+    EDIT_R --> EDIT_R: B1 va gia tri sai / bao loi
+    EDIT_G --> EDIT_G: B1 va gia tri sai / bao loi
+    EDIT_Y --> EDIT_Y: B1 va gia tri sai / bao loi
     EDIT_R --> ACCEPTED: B1 va hop le
     EDIT_G --> ACCEPTED: B1 va hop le
     EDIT_Y --> ACCEPTED: B1 va hop le
@@ -143,7 +164,7 @@ Các FSM chỉ yêu cầu năm cặp màu `R/R`, `G/R`, `Y/R`, `R/G`, `R/Y`. Ch�
 
 | Dữ liệu | Nơi giữ đề xuất | Khi nào đổi |
 |---|---|---|
-| Mode hiện tại, mode đích | Bộ điều phối, khai báo dùng chung trong `global.h/.c` nếu cần | Nhận yêu cầu và hoàn tất `SWITCH` |
+| Mode hiện tại, mode đích | Bộ điều phối, biến dùng chung khai báo trong `global.h/.c` | Nhận yêu cầu và hoàn tất `SWITCH` |
 | Cấu hình chạy, cấu hình chờ áp dụng | Bộ điều phối và `global.h/.c` | Reset hoặc hoàn tất xác nhận hợp lệ từ Tuning |
 | Bản nháp và trường đang chọn | `fsm_tuning` | Vào Tuning và thao tác nút |
 | Pha Auto/Manual | Module FSM tương ứng | Vào chế độ hoặc có sự kiện chuyển pha |
