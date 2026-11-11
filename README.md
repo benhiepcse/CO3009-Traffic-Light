@@ -48,6 +48,8 @@ Bảng ánh xạ chân Arduino sang chân STM32, mức logic khi nhấn, tổ h�
 - **Bộ lập lịch** nhận tick từ ngắt timer qua `SCH_Update`. Vòng lặp chính gọi `SCH_Dispatch_Tasks` để thực thi các tác vụ đến hạn. Tác vụ one-shot có `Period = 0` và chỉ chạy một lần.
 - **Máy trạng thái hữu hạn (FSM)** quản lý ba chế độ và việc chuyển chế độ. FSM gọi API của các module hỗ trợ để đọc nút, điều khiển đèn và cập nhật LCD.
 
+[CO3009-12 — Chế độ Automatic](docs/sprint-02/co3009-12-automatic.md) mô tả các pha đèn, thời lượng và cách chạy kiểm thử trên máy tính.
+
 Cấu trúc dự kiến sau khi tích hợp project STM32CubeIDE:
 
 ```text
