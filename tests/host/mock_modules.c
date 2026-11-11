@@ -168,11 +168,15 @@ void button_clear_events(void)
 
 static traffic_color_t road1_color;
 static traffic_color_t road2_color;
+static uint32_t pair_requests;
+static uint32_t dual_green_requests;
 
 void traffic_init(void)
 {
     road1_color = TRAFFIC_RED;
     road2_color = TRAFFIC_RED;
+    pair_requests = 0;
+    dual_green_requests = 0;
 }
 
 static bool traffic_color_is_valid(traffic_color_t color)
@@ -183,8 +187,12 @@ static bool traffic_color_is_valid(traffic_color_t color)
 
 bool traffic_set_pair(traffic_color_t road1, traffic_color_t road2)
 {
-    if (!traffic_color_is_valid(road1) || !traffic_color_is_valid(road2)
-        || (road1 == TRAFFIC_GREEN && road2 == TRAFFIC_GREEN)) {
+    ++pair_requests;
+    if (road1 == TRAFFIC_GREEN && road2 == TRAFFIC_GREEN) {
+        ++dual_green_requests;
+        return false;
+    }
+    if (!traffic_color_is_valid(road1) || !traffic_color_is_valid(road2)) {
         return false;
     }
 
@@ -201,6 +209,16 @@ traffic_color_t mock_traffic_road1(void)
 traffic_color_t mock_traffic_road2(void)
 {
     return road2_color;
+}
+
+uint32_t mock_traffic_pair_requests(void)
+{
+    return pair_requests;
+}
+
+uint32_t mock_traffic_dual_green_requests(void)
+{
+    return dual_green_requests;
 }
 
 static dht20_status_t sensor_status;
@@ -273,6 +291,7 @@ const char *mock_lcd_line(uint8_t row)
     return lcd_lines[row];
 }
 
+#ifndef MOCK_MODULES_USE_REAL_FSM
 void fsm_init(void)
 {
     (void)traffic_set_pair(TRAFFIC_RED, TRAFFIC_RED);
@@ -288,3 +307,4 @@ void fsm_run(void)
         (void)traffic_set_pair(TRAFFIC_RED, TRAFFIC_GREEN);
     }
 }
+#endif
