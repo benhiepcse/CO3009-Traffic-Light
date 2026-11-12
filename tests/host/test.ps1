@@ -1,4 +1,4 @@
-param([string]$Compiler = 'gcc')
+param([string]$Compiler = 'gcc', [string]$Target)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
@@ -13,23 +13,36 @@ $targets = @(
     @{ Name = 'fsm_modes_test'; Sources = $realFsm + 'tests/host/fsm_modes_test.c'; Real = $true }
 )
 
+$targets += @{
+    Name = 'scheduler_test'
+    Sources = @('Core/Src/scheduler.c', 'tests/host/scheduler_test.c')
+    Scheduler = $true
+}
+
+if ($Target) {
+    $targets = @($targets | Where-Object { $_.Name -eq $Target })
+    if ($targets.Count -eq 0) { throw "Unknown target: $Target" }
+}
+
 New-Item -ItemType Directory -Path $buildDir | Out-Null
 Push-Location -LiteralPath $repoRoot
 try {
-    foreach ($target in $targets) {
-        $sources = @($target.Sources + 'tests/host/mock_modules.c')
-        $exe = Join-Path $buildDir ($target.Name + '.exe')
+    foreach ($entry in $targets) {
+        $sources = @($entry.Sources)
+        if (-not $entry.Scheduler) { $sources += 'tests/host/mock_modules.c' }
+        $exe = Join-Path $buildDir ($entry.Name + '.exe')
         $arguments = $common
-        if ($target.Real) { $arguments += '-DMOCK_MODULES_USE_REAL_FSM' }
+        if ($entry.Scheduler) { $arguments += '-DSCH_HOST_TEST' }
+        if ($entry.Real) { $arguments += '-DMOCK_MODULES_USE_REAL_FSM' }
         & $Compiler @arguments @sources '-o' $exe
-        if ($LASTEXITCODE -ne 0) { throw "Build failed for $($target.Name)." }
+        if ($LASTEXITCODE -ne 0) { throw "Build failed for $($entry.Name)." }
         & $exe
-        if ($LASTEXITCODE -ne 0) { throw "Tests failed for $($target.Name)." }
+        if ($LASTEXITCODE -ne 0) { throw "Tests failed for $($entry.Name)." }
     }
 } finally {
     Pop-Location
-    foreach ($target in $targets) {
-        $exe = Join-Path $buildDir ($target.Name + '.exe')
+    foreach ($entry in $targets) {
+        $exe = Join-Path $buildDir ($entry.Name + '.exe')
         if (Test-Path -LiteralPath $exe) { Remove-Item -LiteralPath $exe }
     }
     if (@(Get-ChildItem -LiteralPath $buildDir -Force).Count -eq 0) {
