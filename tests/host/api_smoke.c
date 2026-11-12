@@ -88,9 +88,45 @@ static void test_dht20_and_lcd(void)
     assert(!lcd_write_line(2, "Invalid row"));
 }
 
+static unsigned callback_count;
+
+static void count_callback(void)
+{
+    ++callback_count;
+}
+
+static void test_scheduler_periodic_contract(void)
+{
+    SCH_Init();
+    callback_count = 0;
+
+    assert(SCH_Add_Task(NULL, 0, 2) == 0);
+    uint32_t id = SCH_Add_Task(count_callback, 0, 2);
+    assert(id != 0);
+
+    SCH_Dispatch_Tasks();
+    assert(callback_count == 1);
+
+    SCH_Update();
+    SCH_Dispatch_Tasks();
+    assert(callback_count == 1);
+
+    SCH_Update();
+    SCH_Dispatch_Tasks();
+    assert(callback_count == 2);
+
+    assert(SCH_Delete_Task(id) == 1);
+    assert(SCH_Delete_Task(id) == 0);
+    SCH_Update();
+    SCH_Update();
+    SCH_Dispatch_Tasks();
+    assert(callback_count == 2);
+}
+
 int main(void)
 {
     test_scheduler_button_fsm_and_traffic();
+    test_scheduler_periodic_contract();
     test_software_timer();
     test_dht20_and_lcd();
 
