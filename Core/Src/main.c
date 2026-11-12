@@ -22,10 +22,19 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#if defined(CO3009_HW_BRINGUP) && (defined(SCH_SELFTEST) || defined(CO3009_18_MEASURE))
+#error Select one firmware mode
+#endif
+
+#ifdef CO3009_HW_BRINGUP
 #include <stdio.h>
 #include <string.h>
-#ifdef SCH_SELFTEST
+#else
 #include "scheduler.h"
+#include "software_timer.h"
+#endif
+
+#ifdef SCH_SELFTEST
 #include "sched_selftest.h"
 #endif
 /* USER CODE END Includes */
@@ -52,8 +61,16 @@ TIM_HandleTypeDef htim2;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-volatile uint32_t tick_10ms = 0;
+#ifdef CO3009_18_MEASURE
+#define CO3009_18_SAMPLE_COUNT 64U
 
+static volatile uint32_t irq_ms[CO3009_18_SAMPLE_COUNT];
+static volatile uint32_t irq_count;
+#ifndef SCH_SELFTEST
+static volatile uint32_t timer_task_ms[CO3009_18_SAMPLE_COUNT];
+static volatile uint32_t timer_task_count;
+#endif
+#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -63,7 +80,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
-#ifndef SCH_SELFTEST
+#ifdef CO3009_HW_BRINGUP
 static void uart_print(const char *text);
 static void i2c_scan(void);
 static void traffic_set_raw(uint8_t road1, uint8_t road2);
@@ -74,7 +91,7 @@ static void button_level_report(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#ifndef SCH_SELFTEST
+#ifdef CO3009_HW_BRINGUP
 static void uart_print(const char *text)
 {
     HAL_UART_Transmit(&huart2, (uint8_t *)text,
@@ -159,6 +176,20 @@ static void button_level_report(void)
     uart_print(line);
 }
 #endif
+#if !defined(CO3009_HW_BRINGUP) && !defined(SCH_SELFTEST)
+static void timer_10ms_task(void)
+{
+#ifdef CO3009_18_MEASURE
+    uint32_t index = timer_task_count;
+    if (index < CO3009_18_SAMPLE_COUNT) {
+        timer_task_ms[index] = HAL_GetTick();
+        timer_task_count = index + 1U;
+    }
+#endif
+    sw_timer_tick();
+}
+#endif
+
 /* USER CODE END 0 */
 
 /**
@@ -193,21 +224,28 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-#ifdef SCH_SELFTEST
+#if defined(SCH_SELFTEST)
   SCH_SelfTest_Init();
+#elif !defined(CO3009_HW_BRINGUP)
+  SCH_Init();
+  sw_timer_init();
+
+  if (SCH_Add_Task(timer_10ms_task, 1U, 1U) == 0U)
+  {
+      Error_Handler();
+  }
 #endif
+
+  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
   if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK)
   {
       Error_Handler();
   }
 
-#ifndef SCH_SELFTEST
+#ifdef CO3009_HW_BRINGUP
   i2c_scan();
   traffic_truth_table_test();
 #endif
-
-
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -217,13 +255,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-#ifdef SCH_SELFTEST
-    SCH_Dispatch_Tasks();
+#ifdef CO3009_HW_BRINGUP
+    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+    button_level_report();
+    HAL_Delay(500);
 #else
-	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-	  button_level_report();
-	  HAL_Delay(500);
+    SCH_Dispatch_Tasks();
 #endif
   }
   /* USER CODE END 3 */
@@ -436,14 +473,22 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+#ifndef CO3009_HW_BRINGUP
     if (htim->Instance == TIM2)
     {
-#ifdef SCH_SELFTEST
-        SCH_Update();
-#else
-        tick_10ms++;
+#ifdef CO3009_18_MEASURE
+        uint32_t index = irq_count;
+        if (index < CO3009_18_SAMPLE_COUNT)
+        {
+            irq_ms[index] = HAL_GetTick();
+            irq_count = index + 1U;
+        }
 #endif
+        SCH_Update();
     }
+#else
+    (void)htim;
+#endif
 }
 /* USER CODE END 4 */
 
