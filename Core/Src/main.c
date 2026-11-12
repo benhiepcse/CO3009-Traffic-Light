@@ -24,6 +24,10 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <string.h>
+#ifdef SCH_SELFTEST
+#include "scheduler.h"
+#include "sched_selftest.h"
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,15 +63,18 @@ static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
+#ifndef SCH_SELFTEST
 static void uart_print(const char *text);
 static void i2c_scan(void);
 static void traffic_set_raw(uint8_t road1, uint8_t road2);
 static void traffic_truth_table_test(void);
 static void button_level_report(void);
+#endif
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#ifndef SCH_SELFTEST
 static void uart_print(const char *text)
 {
     HAL_UART_Transmit(&huart2, (uint8_t *)text,
@@ -151,6 +158,7 @@ static void button_level_report(void)
 
     uart_print(line);
 }
+#endif
 /* USER CODE END 0 */
 
 /**
@@ -185,14 +193,18 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+#ifdef SCH_SELFTEST
+  SCH_SelfTest_Init();
+#endif
   if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK)
   {
       Error_Handler();
   }
 
+#ifndef SCH_SELFTEST
   i2c_scan();
-
   traffic_truth_table_test();
+#endif
 
 
 
@@ -206,9 +218,13 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+#ifdef SCH_SELFTEST
+    SCH_Dispatch_Tasks();
+#else
 	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 	  button_level_report();
 	  HAL_Delay(500);
+#endif
   }
   /* USER CODE END 3 */
 }
@@ -422,7 +438,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM2)
     {
+#ifdef SCH_SELFTEST
+        SCH_Update();
+#else
         tick_10ms++;
+#endif
     }
 }
 /* USER CODE END 4 */

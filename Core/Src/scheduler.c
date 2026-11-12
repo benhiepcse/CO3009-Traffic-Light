@@ -1,5 +1,6 @@
 #include "scheduler.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 
 #ifdef SCH_HOST_TEST
@@ -23,6 +24,7 @@ static SchedulerTask tasks[SCH_MAX_TASKS];
 static int head = SCH_NO_SLOT;
 static uint32_t next_id = 1U;
 static uint32_t pending_ticks;
+static bool dispatching;
 
 static uint32_t lock_scheduler(void)
 {
@@ -89,6 +91,24 @@ static uint32_t allocate_id(void)
     return id;
 }
 
+/* Caller holds the lock and has normalized the queue. */
+static void insert_task(int slot, uint32_t delay_ticks)
+{
+    int *link = &head;
+    while (*link != SCH_NO_SLOT && tasks[*link].delay_ticks <= delay_ticks) {
+        delay_ticks -= tasks[*link].delay_ticks;
+        link = &tasks[*link].next;
+    }
+
+    int successor = *link;
+    tasks[slot].delay_ticks = delay_ticks;
+    tasks[slot].next = successor;
+    if (successor != SCH_NO_SLOT) {
+        tasks[successor].delay_ticks -= delay_ticks;
+    }
+    *link = slot;
+}
+
 void SCH_Init(void)
 {
     uint32_t saved_primask = lock_scheduler();
@@ -124,29 +144,13 @@ uint32_t SCH_Add_Task(void (*task)(void),
         return 0U;
     }
 
-    /* Walk past equal deadlines to preserve insertion order. */
-    int *link = &head;
-    while (*link != SCH_NO_SLOT && tasks[*link].delay_ticks <= delay_ticks) {
-        delay_ticks -= tasks[*link].delay_ticks;
-        link = &tasks[*link].next;
-    }
-
     uint32_t id = allocate_id();
-    int successor = *link;
-
     tasks[free_slot] = (SchedulerTask){
         .task = task,
         .id = id,
-        .delay_ticks = delay_ticks,
-        .period_ticks = period_ticks,
-        .next = successor
+        .period_ticks = period_ticks
     };
-
-    if (successor != SCH_NO_SLOT) {
-        tasks[successor].delay_ticks -= delay_ticks;
-    }
-
-    *link = free_slot;
+    insert_task(free_slot, delay_ticks);
     unlock_scheduler(saved_primask);
     return id;
 }
@@ -197,7 +201,37 @@ void SCH_Update(void)
 
 void SCH_Dispatch_Tasks(void)
 {
-    /* TODO-08: Run due tasks and reschedule periodic tasks. */
+    if (dispatching) {
+        return;
+    }
+
+    dispatching = true;
+    for (int run = 0; run < SCH_MAX_TASKS; run++) {
+        uint32_t saved_primask = lock_scheduler();
+        normalize_pending_ticks();
+
+        int slot = head;
+        if (slot == SCH_NO_SLOT || tasks[slot].delay_ticks != 0U) {
+            unlock_scheduler(saved_primask);
+            break;
+        }
+
+        void (*callback)(void) = tasks[slot].task;
+        uint32_t period = tasks[slot].period_ticks;
+        head = tasks[slot].next;
+
+        if (period == 0U) {
+            /* The one-shot ID is already invalid when its callback runs. */
+            tasks[slot] = (SchedulerTask){0};
+        } else {
+            /* Keep the slot and ID so the callback can delete itself. */
+            insert_task(slot, period);
+        }
+
+        unlock_scheduler(saved_primask);
+        callback();
+    }
+    dispatching = false;
 }
 
 #ifdef SCH_HOST_TEST
