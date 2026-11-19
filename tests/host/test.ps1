@@ -26,6 +26,18 @@ $targets = @(
         )
         Scheduler = $true
     }
+    @{
+        Name = 'traffic_light_test'
+        Sources = @('Core/Src/traffic_light.c', 'tests/host/traffic_light_test.c')
+        Defines = @('-DTRAFFIC_LIGHT_HOST_TEST')
+        Standalone = $true
+    }
+    @{
+        Name = 'button_test'
+        Sources = @('Core/Src/button.c', 'tests/host/button_test.c')
+        Defines = @('-DBUTTON_HOST_TEST')
+        Standalone = $true
+    }
 )
 
 if ($Target) {
@@ -38,11 +50,12 @@ Push-Location -LiteralPath $repoRoot
 try {
     foreach ($entry in $targets) {
         $sources = @($entry.Sources)
-        if (-not $entry.Scheduler) { $sources += 'tests/host/mock_modules.c' }
+        if (-not $entry.Scheduler -and -not $entry.Standalone) { $sources += 'tests/host/mock_modules.c' }
         $exe = Join-Path $buildDir ($entry.Name + '.exe')
         $arguments = $common
         if ($entry.Scheduler) { $arguments += '-DSCH_HOST_TEST' }
         if ($entry.Real) { $arguments += '-DMOCK_MODULES_USE_REAL_FSM' }
+        if ($entry.Defines) { $arguments += $entry.Defines }
 
         & $Compiler @arguments @sources '-o' $exe
         if ($LASTEXITCODE -ne 0) { throw "Build failed for $($entry.Name)." }
