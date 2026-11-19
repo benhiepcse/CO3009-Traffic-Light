@@ -26,10 +26,19 @@
 #error Select one firmware mode
 #endif
 
+#if defined(CO3009_TRAFFIC_DEMO) || defined(CO3009_BUTTON_DEMO)
+#define CO3009_DRIVER_DEMO
+#if (defined(CO3009_TRAFFIC_DEMO) && defined(CO3009_BUTTON_DEMO)) || \
+    defined(CO3009_HW_BRINGUP) || defined(SCH_SELFTEST) || defined(CO3009_18_MEASURE)
+#error Select a single driver demo without other firmware modes
+#endif
+#include "driver_demo.h"
+#endif
+
 #ifdef CO3009_HW_BRINGUP
 #include <stdio.h>
 #include <string.h>
-#else
+#elif !defined(CO3009_DRIVER_DEMO)
 #include "scheduler.h"
 #include "software_timer.h"
 #endif
@@ -176,7 +185,7 @@ static void button_level_report(void)
     uart_print(line);
 }
 #endif
-#if !defined(CO3009_HW_BRINGUP) && !defined(SCH_SELFTEST)
+#if !defined(CO3009_HW_BRINGUP) && !defined(SCH_SELFTEST) && !defined(CO3009_DRIVER_DEMO)
 static void timer_10ms_task(void)
 {
 #ifdef CO3009_18_MEASURE
@@ -224,6 +233,9 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+#ifdef CO3009_DRIVER_DEMO
+  driver_demo_init(&huart2);
+#else
 #if defined(SCH_SELFTEST)
   SCH_SelfTest_Init();
 #elif !defined(CO3009_HW_BRINGUP)
@@ -246,6 +258,7 @@ int main(void)
   i2c_scan();
   traffic_truth_table_test();
 #endif
+#endif
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -259,6 +272,8 @@ int main(void)
     HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
     button_level_report();
     HAL_Delay(500);
+#elif defined(CO3009_DRIVER_DEMO)
+    driver_demo_run();
 #else
     SCH_Dispatch_Tasks();
 #endif
@@ -473,7 +488,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-#ifndef CO3009_HW_BRINGUP
+#if !defined(CO3009_HW_BRINGUP) && !defined(CO3009_DRIVER_DEMO)
     if (htim->Instance == TIM2)
     {
 #ifdef CO3009_18_MEASURE
