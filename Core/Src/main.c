@@ -35,6 +35,16 @@
 #include "driver_demo.h"
 #endif
 
+#if defined(CO3009_DHT20_DEMO) || defined(CO3009_LCD_DEMO)
+#if (defined(CO3009_DHT20_DEMO) && defined(CO3009_LCD_DEMO)) || \
+    defined(CO3009_DRIVER_DEMO) || defined(CO3009_HW_BRINGUP) || \
+    defined(SCH_SELFTEST) || defined(CO3009_18_MEASURE)
+#error Select a single environment demo without other firmware modes
+#endif
+#define CO3009_ENVIRONMENT_DEMO
+#include "environment_demo.h"
+#endif
+
 #ifdef CO3009_HW_BRINGUP
 #include <stdio.h>
 #include <string.h>
@@ -185,7 +195,8 @@ static void button_level_report(void)
     uart_print(line);
 }
 #endif
-#if !defined(CO3009_HW_BRINGUP) && !defined(SCH_SELFTEST) && !defined(CO3009_DRIVER_DEMO)
+#if !defined(CO3009_HW_BRINGUP) && !defined(SCH_SELFTEST) && !defined(CO3009_DRIVER_DEMO) && \
+    !defined(CO3009_ENVIRONMENT_DEMO)
 static void timer_10ms_task(void)
 {
 #ifdef CO3009_18_MEASURE
@@ -238,6 +249,8 @@ int main(void)
 #else
 #if defined(SCH_SELFTEST)
   SCH_SelfTest_Init();
+#elif defined(CO3009_ENVIRONMENT_DEMO)
+  environment_demo_init(&huart2);
 #elif !defined(CO3009_HW_BRINGUP)
   SCH_Init();
   sw_timer_init();
