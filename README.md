@@ -52,7 +52,7 @@ Bảng ánh xạ chân Arduino sang chân STM32, mức logic khi nhấn, tổ h�
 
 [CO3009-13 đến CO3009-15 — Manual, Tuning và chuyển mode](docs/sprint-03/co3009-13-15-fsm.md) mô tả phần điều khiển ba chế độ, cấu hình dùng chung và bộ test host. Chạy `tests/host/test.ps1` bằng PowerShell với GCC để kiểm tra logic FSM.
 
-Cấu trúc dự kiến sau khi tích hợp project STM32CubeIDE:
+Cấu trúc project STM32CubeIDE:
 
 ```text
 CO3009-Traffic-Light/
@@ -60,7 +60,7 @@ CO3009-Traffic-Light/
 │   ├── Inc/                # Header và giao diện các module
 │   └── Src/                # Mã nguồn ứng dụng và module
 ├── Drivers/                # Thư viện STM32 HAL và CMSIS
-├── <ten-project>.ioc       # Cấu hình STM32CubeMX
+├── BTL.ioc                 # Cấu hình STM32CubeMX
 ├── .gitignore
 └── README.md
 ```
@@ -72,25 +72,25 @@ CO3009-Traffic-Light/
 Cài Git và STM32CubeIDE. Sau đó tải repo về máy:
 
 ```bash
-git clone https://github.com/USERNAME_CUA_BAN/CO3009-Traffic-Light.git
+git clone https://github.com/benhiepcse/CO3009-Traffic-Light.git
 cd CO3009-Traffic-Light
 ```
 
 Nếu repo ở chế độ riêng tư, đăng nhập bằng tài khoản GitHub đã được cấp quyền. Khi nhóm công bố tag nộp, sử dụng tag đó để build đúng phiên bản dùng cho báo cáo và demo.
 
-### Build và nạp sau khi project nền được bàn giao
+### Build và nạp firmware tích hợp
 
-1. Trong STM32CubeIDE, chọn **File → Open Projects from File System** và mở thư mục chứa project.
+1. Trong STM32CubeIDE, chọn **File → Open Projects from File System** và mở thư mục repo chứa `.project` và `BTL.ioc`.
 2. Kiểm tra cấu hình project dùng board **NUCLEO-F103RB** trong Board Selector và chọn **Serial Wire** ở **System Core → SYS → Debug**.
-3. Chọn **Project → Build Project** và kiểm tra kết quả biên dịch.
+3. Chọn cấu hình **Debug**. Giữ các macro demo tắt để build firmware tích hợp, rồi chọn **Project → Build Project**.
 4. Kết nối board với máy tính qua cổng **ST-LINK** và chọn **Run** để nạp firmware.
 5. Kiểm tra hệ thống khởi động và phản hồi theo bảng thao tác của phiên bản đang chạy.
 
-Hướng dẫn này sẽ được cập nhật với tên project thực tế và kiểm tra lại từ bản clone sạch ở **CO3009-27**.
+Đối chiếu bảng mã đèn, mức nhấn nút và địa chỉ LCD với bộ kit trước khi nạp. Khi cần đo chu kỳ TIM2 và task điều khiển, dùng cấu hình đo riêng. [Checklist phần cứng](docs/sprint-04/co3009-20-hardware-acceptance.md) · [Lịch tác vụ và cách đo](docs/co3009-18-task-schedule.md)
 
 ## 6. Vận hành và kiểm thử
 
-Bảng thao tác dưới đây được hiện thực và kiểm tra bằng mock. Nghiệm thu trên board thực hiện khi tích hợp scheduler và driver thật.
+Bảng thao tác dưới đây áp dụng cho firmware tích hợp. Logic đã qua test host và còn chờ nghiệm thu trên board.
 
 Xem [CO3009-06 — Thiết kế FSM Sprint 1](docs/sprint-01/co3009-06-fsm-design.md) để review phương án nút nhấn, các pha đèn và quy tắc chuyển chế độ.
 

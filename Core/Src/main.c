@@ -56,6 +56,16 @@
 #ifdef SCH_SELFTEST
 #include "sched_selftest.h"
 #endif
+
+#if !defined(CO3009_HW_BRINGUP) && !defined(SCH_SELFTEST) && !defined(CO3009_DRIVER_DEMO) && \
+    !defined(CO3009_ENVIRONMENT_DEMO)
+#include "button.h"
+#include "dht20.h"
+#include "fsm.h"
+#include "lcd.h"
+#include "traffic_light.h"
+#define CO3009_LCD_REFRESH_MS 50U
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -197,7 +207,7 @@ static void button_level_report(void)
 #endif
 #if !defined(CO3009_HW_BRINGUP) && !defined(SCH_SELFTEST) && !defined(CO3009_DRIVER_DEMO) && \
     !defined(CO3009_ENVIRONMENT_DEMO)
-static void timer_10ms_task(void)
+static void control_10ms_task(void)
 {
 #ifdef CO3009_18_MEASURE
     uint32_t index = timer_task_count;
@@ -207,6 +217,8 @@ static void timer_10ms_task(void)
     }
 #endif
     sw_timer_tick();
+    button_poll();
+    fsm_run();
 }
 #endif
 
@@ -254,8 +266,17 @@ int main(void)
 #elif !defined(CO3009_HW_BRINGUP)
   SCH_Init();
   sw_timer_init();
+  traffic_init();
+  button_init();
+  dht20_init();
+  const bool lcd_ready = lcd_init();
+  fsm_init();
 
-  if (SCH_Add_Task(timer_10ms_task, 1U, 1U) == 0U)
+  if (SCH_Add_Task(control_10ms_task, 1U, 1U) == 0U ||
+      SCH_Add_Task(dht20_poll, SW_TIMER_MS_TO_TICKS(DHT20_POLL_MS),
+                   SW_TIMER_MS_TO_TICKS(DHT20_POLL_MS)) == 0U ||
+      (lcd_ready && SCH_Add_Task(fsm_display_run, 1U,
+                                SW_TIMER_MS_TO_TICKS(CO3009_LCD_REFRESH_MS)) == 0U))
   {
       Error_Handler();
   }
