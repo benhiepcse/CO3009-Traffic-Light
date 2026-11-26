@@ -38,6 +38,18 @@ $targets = @(
         Defines = @('-DBUTTON_HOST_TEST')
         Standalone = $true
     }
+    @{
+        Name = 'dht20_test'
+        Sources = @('Core/Src/dht20.c', 'tests/host/dht20_test.c')
+        Defines = @('-DDHT20_HOST_TEST')
+        Standalone = $true
+    }
+    @{
+        Name = 'lcd_test'
+        Sources = @('Core/Src/lcd.c', 'tests/host/lcd_test.c')
+        Defines = @('-DLCD_HOST_TEST', '-DCO3009_LCD_ADDRESS=0x3F')
+        Standalone = $true
+    }
 )
 
 if ($Target) {

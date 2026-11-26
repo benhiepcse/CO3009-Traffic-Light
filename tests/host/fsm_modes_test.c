@@ -15,6 +15,14 @@ static void expect_pair(traffic_color_t road1, traffic_color_t road2)
     assert(mock_traffic_dual_green_requests() == 0);
 }
 
+static void run_and_refresh(void)
+{
+    fsm_run();
+    /* Allow both dirty rows to be sent in two display task calls. */
+    fsm_display_run();
+    fsm_display_run();
+}
+
 static void start_system(void)
 {
     button_init();
@@ -31,7 +39,7 @@ static void advance(uint32_t ticks)
 {
     for (uint32_t tick = 0; tick < ticks; ++tick) {
         sw_timer_tick();
-        fsm_run();
+        run_and_refresh();
         assert(mock_traffic_dual_green_requests() == 0);
     }
 }
@@ -51,7 +59,7 @@ static void inject(button_id_t button)
 static void press(button_id_t button)
 {
     inject(button);
-    fsm_run();
+    run_and_refresh();
 }
 
 static void finish_switch(system_mode_t destination, bool has_amber)
@@ -161,7 +169,7 @@ static void test_event_priority_and_stale_timeouts(void)
     inject(BUTTON_D10);
     inject(BUTTON_D9);
     inject(BUTTON_D8);
-    fsm_run();
+    run_and_refresh();
     assert(strncmp(mock_lcd_line(0), "TUNE GREEN", 10) == 0);
     assert(strncmp(mock_lcd_line(1), "5 s", 3) == 0);
     mock_button_inject((button_event_t){ BUTTON_D7, BUTTON_EVENT_LONG_PRESS });
@@ -186,7 +194,7 @@ static void test_tuning_commit_and_reset(void)
     assert(strncmp(mock_lcd_line(1), "R < G+Y+2", 9) == 0);
 
     mock_dht20_sample(DHT20_OK, 300, 700);
-    fsm_run();
+    fsm_display_run();
     assert(strncmp(mock_lcd_line(1), "R < G+Y+2", 9) == 0);
     press(BUTTON_D9);
     press(BUTTON_D9);
@@ -225,24 +233,40 @@ static void test_tuning_commit_and_reset(void)
 static void test_lcd_cache_and_retry(void)
 {
     start_system();
+    assert(mock_lcd_write_requests() == 0);
+    fsm_display_run();
+    assert(mock_lcd_write_requests() == 1);
+    assert(strncmp(mock_lcd_line(0), "START", 5) == 0);
+    fsm_display_run();
+    assert(mock_lcd_write_requests() == 2);
+    assert(strncmp(mock_lcd_line(1), "ALL RED", 7) == 0);
     advance(100);
     const uint32_t writes = mock_lcd_write_requests();
     advance(99);
     assert(mock_lcd_write_requests() == writes);
     mock_dht20_sample(DHT20_OK, -5, 654);
     fsm_run();
+    assert(mock_lcd_write_requests() == writes);
+    fsm_display_run();
     assert(strncmp(mock_lcd_line(1), "T:-0.5 H:65.4", 13) == 0);
     assert(mock_lcd_write_requests() == writes + 1);
 
     mock_fail_next_lcd_write();
     mock_dht20_sample(DHT20_ERROR, 0, 0);
-    fsm_run();
+    fsm_display_run();
     assert(strncmp(mock_lcd_line(1), "T:-0.5 H:65.4", 13) == 0);
-    fsm_run();
+    fsm_display_run();
     assert(strncmp(mock_lcd_line(1), "SENSOR ERROR", 12) == 0);
     const uint32_t after_retry = mock_lcd_write_requests();
-    fsm_run();
+    fsm_display_run();
     assert(mock_lcd_write_requests() == after_retry);
+
+    mock_dht20_sample(DHT20_OK, -500, 1000);
+    fsm_display_run();
+    assert(strncmp(mock_lcd_line(1), "T:-50.0 H:100.0", 15) == 0);
+    mock_dht20_sample(DHT20_OK, INT16_MIN, UINT16_MAX);
+    fsm_display_run();
+    assert(strncmp(mock_lcd_line(1), "SENSOR RANGE", 12) == 0);
 }
 
 static void test_all_three_durations_and_late_switch(void)

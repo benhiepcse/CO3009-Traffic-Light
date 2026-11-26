@@ -7,28 +7,27 @@ TIM2 uses htim2 and the APB1 timer clock of 64 MHz. APB1 runs at
 PSC = 6399 and ARR = 99 give (6399 + 1) * (99 + 1) / 64000000 s,
 which equals 10 ms. TIM2 global interrupt is enabled.
 
-Default startup initializes the scheduler and software timer, registers
-the timer task once, clears the TIM2 update flag and starts TIM2 IRQ.
+Default startup initializes the scheduler, drivers and FSM, registers
+the tasks once, clears the TIM2 update flag and starts TIM2 IRQ.
 TIM2_IRQHandler calls HAL_TIM_IRQHandler, which invokes the period
 elapsed callback. Only TIM2 calls SCH_Update. The main loop dispatches
-callbacks. The default loop and the timer task contain no HAL_Delay.
+callbacks. The default loop and the control task contain no HAL_Delay.
 
 ## Task schedule
 
 | Work | Callback or owner | Delay ticks/ms | Period ticks/ms | Status |
 |---|---|---:|---:|---|
-| Software timer | timer_10ms_task -> sw_timer_tick | 1 / 10 | 1 / 10 | Registered in default mode |
-| Button sampling | button_poll in the 10 ms control task | 1 / 10 | 1 / 10 | Planned, driver pending |
-| FSM | fsm_run in the 10 ms control task | 1 / 10 | 1 / 10 | Planned, FSM sources pending |
-| DHT20 service | dht20_poll | TBD | TBD | Pending driver cadence |
-| LCD | FSM owns display updates | Inherits FSM schedule | Inherits FSM schedule | Planned, no separate writer |
+| Software timer, buttons and FSM | `control_10ms_task` | 1 / 10 | 1 / 10 | Always registered |
+| DHT20 service | `dht20_poll` | 1 / 10 | 1 / 10 | Sensor sampling interval is 2 s |
+| LCD refresh | `fsm_display_run` | 1 / 10 | 5 / 50 | Registered if LCD initialization succeeds |
 
-When button and FSM sources are available, extend the existing 10 ms
-task to call sw_timer_tick, button_poll and fsm_run in that order.
+The control task calls `sw_timer_tick()`, `button_poll()` and `fsm_run()`
+in that order.
 This keeps the order even if a TIM2 IRQ occurs between calls. A timer
 started by the FSM then first decrements on the next control cycle.
-DHT20 polling cadence and sensor sampling cadence are separate
-settings. Confirm them from the actual driver before registration.
+The LCD task writes at most one changed line per callback. Both I²C
+drivers run in the cooperative scheduler, so measure control dispatch
+intervals with the display and sensor active on the board.
 
 ## Board measurement
 
@@ -45,9 +44,8 @@ Use an independent measurement if clock accuracy must be established.
 | Signal | Configured or expected | Measured min / max / mean |
 |---|---|---|
 | TIM2 IRQ | 10 ms | Pending board |
-| Software timer callback | 10 ms | Pending board |
-| Button polling | 10 ms | Pending driver and board |
-| FSM, DHT20 and LCD | Per integrated schedule | Pending integration |
+| Software timer, buttons and FSM | 10 ms nominal | Pending board |
+| DHT20 service and LCD refresh | Per task schedule | Pending board |
 
 Use SCH_SELFTEST for the separate CO3009-08 periodic and one-shot
 demo. CO3009_18_MEASURE can also record IRQ timestamps in that mode.
