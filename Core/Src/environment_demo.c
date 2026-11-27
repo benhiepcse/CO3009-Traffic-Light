@@ -73,6 +73,10 @@ static uint8_t next_row;
 
 static void show_demo_screen(void)
 {
+    if (!lcd_poll_ready()) {
+        next_row = 0U;
+        return;
+    }
     const uint32_t now = HAL_GetTick();
     if (now - page_start_ms >= SCREEN_PERIOD_MS) {
         page_start_ms = now;
@@ -90,8 +94,7 @@ void environment_demo_init(UART_HandleTypeDef *uart)
     print_log("\r\nCO3009-17 LCD demo with simulated data\r\n");
     SCH_Init();
     if (!lcd_init()) {
-        print_log("LCD init failed. Check CO3009_LCD_ADDRESS.\r\n");
-        return;
+        print_log("LCD offline, retrying. Check I2C wiring/address.\r\n");
     }
     page = 0U;
     next_row = 0U;

@@ -19,7 +19,7 @@ callbacks. The default loop and the control task contain no HAL_Delay.
 |---|---|---:|---:|---|
 | Software timer, buttons and FSM | `control_10ms_task` | 1 / 10 | 1 / 10 | Always registered |
 | DHT20 service | `dht20_poll` | 1 / 10 | 1 / 10 | Sensor sampling interval is 2 s |
-| LCD refresh | `fsm_display_run` | 1 / 10 | 5 / 50 | Registered if LCD initialization succeeds |
+| LCD refresh | `fsm_display_run` | 1 / 10 | 5 / 50 | Always registered. An offline LCD retries initialization one step per callback. |
 
 The control task calls `sw_timer_tick()`, `button_poll()` and `fsm_run()`
 in that order.

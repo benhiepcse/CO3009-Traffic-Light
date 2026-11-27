@@ -21,6 +21,12 @@ static const uint8_t expected_raw[][TRAFFIC_GREEN + 1U] = {
 static uint8_t output[2];
 static uint8_t write_order[2];
 static size_t write_count;
+static uint32_t clock_ms;
+
+uint32_t traffic_test_now_ms(void)
+{
+    return clock_ms;
+}
 
 static void expect(bool condition, const char *message)
 {
@@ -128,6 +134,15 @@ static void test_rejected_pairs_preserve_outputs(void)
 
 int main(void)
 {
+    clock_ms = UINT32_MAX - 499U;
+    reset_fixture();
+    clock_ms += 1000U;
+    write_count = 0U;
+    expect(traffic_set_pair(TRAFFIC_RED, TRAFFIC_GREEN), "road 2 green");
+    expect(traffic_road1_elapsed_ms() == 1000U, "road 2 changed road 1 timer");
+    write_count = 0U;
+    expect(traffic_set_pair(TRAFFIC_GREEN, TRAFFIC_RED), "road 1 green");
+    expect(traffic_road1_elapsed_ms() == 0U, "road 1 color change must restart timer");
     test_all_transitions();
     puts("PASS: all 225 valid traffic transitions including both green handovers");
     test_rejected_pairs_preserve_outputs();

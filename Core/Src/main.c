@@ -269,14 +269,14 @@ int main(void)
   traffic_init();
   button_init();
   dht20_init();
-  const bool lcd_ready = lcd_init();
   fsm_init();
+  (void)lcd_init();
 
   if (SCH_Add_Task(control_10ms_task, 1U, 1U) == 0U ||
       SCH_Add_Task(dht20_poll, SW_TIMER_MS_TO_TICKS(DHT20_POLL_MS),
                    SW_TIMER_MS_TO_TICKS(DHT20_POLL_MS)) == 0U ||
-      (lcd_ready && SCH_Add_Task(fsm_display_run, 1U,
-                                SW_TIMER_MS_TO_TICKS(CO3009_LCD_REFRESH_MS)) == 0U))
+      SCH_Add_Task(fsm_display_run, 1U,
+                   SW_TIMER_MS_TO_TICKS(CO3009_LCD_REFRESH_MS)) == 0U)
   {
       Error_Handler();
   }

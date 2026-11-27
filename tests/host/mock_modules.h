@@ -11,6 +11,7 @@ void mock_button_inject(button_event_t event);
 void mock_fail_next_timer_start(void);
 void mock_fail_next_traffic_pair(void);
 void mock_fail_next_lcd_write(void);
+void mock_lcd_disconnect(void);
 void mock_dht20_sample(dht20_status_t status, int16_t temperature_x10,
                         uint16_t humidity_x10);
 traffic_color_t mock_traffic_road1(void);

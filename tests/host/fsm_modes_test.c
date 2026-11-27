@@ -171,7 +171,7 @@ static void test_event_priority_and_stale_timeouts(void)
     inject(BUTTON_D8);
     run_and_refresh();
     assert(strncmp(mock_lcd_line(0), "TUNE GREEN", 10) == 0);
-    assert(strncmp(mock_lcd_line(1), "5 s", 3) == 0);
+    assert(strncmp(mock_lcd_line(0), "TUNE GREEN 5 s", 14) == 0);
     mock_button_inject((button_event_t){ BUTTON_D7, BUTTON_EVENT_LONG_PRESS });
     fsm_run();
     assert(system_mode == SYSTEM_TUNING);
@@ -191,11 +191,18 @@ static void test_tuning_commit_and_reset(void)
     press(BUTTON_D7);
     assert(system_mode == SYSTEM_TUNING);
     assert(active_timing.red_seconds == 9);
-    assert(strncmp(mock_lcd_line(1), "R < G+Y+2", 9) == 0);
+    assert(strstr(mock_lcd_line(0), "R < G+Y+2") != NULL);
+    const uint32_t red_seconds = traffic_road1_elapsed_ms() / 1000U;
+    char counter[FSM_LCD_COLUMNS + 1];
+    snprintf(counter, sizeof counter, "L1 RED %lus", (unsigned long)red_seconds);
+    assert(strncmp(mock_lcd_line(1), counter, strlen(counter)) == 0);
+    advance(100);
+    snprintf(counter, sizeof counter, "L1 RED %lus", (unsigned long)(red_seconds + 1U));
+    assert(strncmp(mock_lcd_line(1), counter, strlen(counter)) == 0);
 
     mock_dht20_sample(DHT20_OK, 300, 700);
     fsm_display_run();
-    assert(strncmp(mock_lcd_line(1), "R < G+Y+2", 9) == 0);
+    assert(strstr(mock_lcd_line(0), "R < G+Y+2") != NULL);
     press(BUTTON_D9);
     press(BUTTON_D9);
     press(BUTTON_D9);
@@ -208,17 +215,27 @@ static void test_tuning_commit_and_reset(void)
     assert(system_mode == SYSTEM_AUTOMATIC);
     assert(active_timing.red_seconds == 11);
     expect_pair(TRAFFIC_GREEN, TRAFFIC_RED);
+    assert(strcmp(mock_lcd_line(0), "L1=5s, L2=9s    ") == 0);
 
     advance(500);
     expect_pair(TRAFFIC_AMBER, TRAFFIC_RED);
-    advance(200);
+    assert(strcmp(mock_lcd_line(0), "L1=2s, L2=4s    ") == 0);
+    advance(100);
+    assert(strcmp(mock_lcd_line(0), "L1=1s, L2=3s    ") == 0);
+    advance(100);
     expect_pair(TRAFFIC_RED, TRAFFIC_RED);
+    assert(strcmp(mock_lcd_line(0), "L1=11s, L2=2s   ") == 0);
     advance(199);
     expect_pair(TRAFFIC_RED, TRAFFIC_RED);
+    assert(strcmp(mock_lcd_line(0), "L1=10s, L2=1s   ") == 0);
     advance(1);
     expect_pair(TRAFFIC_RED, TRAFFIC_GREEN);
-    advance(500 + 200);
+    assert(strcmp(mock_lcd_line(0), "L1=9s, L2=5s    ") == 0);
+    advance(500);
+    assert(strcmp(mock_lcd_line(0), "L1=4s, L2=2s    ") == 0);
+    advance(200);
     expect_pair(TRAFFIC_RED, TRAFFIC_RED);
+    assert(strcmp(mock_lcd_line(0), "L1=2s, L2=11s   ") == 0);
     advance(200);
     expect_pair(TRAFFIC_GREEN, TRAFFIC_RED);
 
@@ -265,6 +282,14 @@ static void test_lcd_cache_and_retry(void)
     fsm_display_run();
     assert(strncmp(mock_lcd_line(1), "T:-50.0 H:100.0", 15) == 0);
     mock_dht20_sample(DHT20_OK, INT16_MIN, UINT16_MAX);
+    fsm_display_run();
+    assert(strncmp(mock_lcd_line(1), "SENSOR RANGE", 12) == 0);
+
+    mock_lcd_disconnect();
+    fsm_display_run();
+    assert(lcd_init());  /* Re-init clears the mock display. FSM state is unchanged. */
+    fsm_display_run();
+    assert(strcmp(mock_lcd_line(0), "L1=5s, L2=8s    ") == 0);
     fsm_display_run();
     assert(strncmp(mock_lcd_line(1), "SENSOR RANGE", 12) == 0);
 }

@@ -72,9 +72,20 @@ static void format_environment(char line[FSM_LCD_COLUMNS + 1])
 
 void fsm_display_run(void)
 {
+    if (!lcd_poll_ready()) {
+        /* Recovery clears DDRAM. Redraw both rows, even if the text is unchanged. */
+        memset(screen_valid, 0, sizeof screen_valid);
+        next_display_row = 0U;
+        return;
+    }
     char lines[FSM_LCD_ROWS][FSM_LCD_COLUMNS + 1];
     switch (system_mode) {
     case SYSTEM_AUTOMATIC:
+        (void)snprintf(lines[0], sizeof lines[0], "L1=%us, L2=%us",
+                       (unsigned)fsm_automatic_road1_seconds_left(),
+                       (unsigned)fsm_automatic_road2_seconds_left());
+        format_environment(lines[1]);
+        break;
     case SYSTEM_MANUAL:
         (void)snprintf(lines[0], sizeof lines[0], "%s %c/%c", mode_name(system_mode),
                        color_letter(current_road1), color_letter(current_road2));

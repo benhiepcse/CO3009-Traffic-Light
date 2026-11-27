@@ -88,6 +88,16 @@ Nếu repo ở chế độ riêng tư, đăng nhập bằng tài khoản GitHub 
 
 Đối chiếu bảng mã đèn, mức nhấn nút và địa chỉ LCD với bộ kit trước khi nạp. Khi cần đo chu kỳ TIM2 và task điều khiển, dùng cấu hình đo riêng. [Checklist phần cứng](docs/sprint-04/co3009-20-hardware-acceptance.md) · [Lịch tác vụ và cách đo](docs/co3009-18-task-schedule.md)
 
+### Build và nạp từ terminal VS Code trên Windows
+
+Mở thư mục repo trong VS Code và cắm cáp vào cổng ST-LINK. Trong terminal PowerShell ở thư mục gốc, chạy:
+
+```powershell
+.\build_flash.bat
+```
+
+Script dùng `arm-none-eabi-gcc.exe` và `STM32_Programmer_CLI.exe` trên `PATH`. Script build firmware tích hợp thành `Debug/vscode/BTL.elf`, sau đó nạp qua SWD, verify và reset board. Để chỉ build, chạy `.\build_flash.bat --build-only`.
+
 ## 6. Vận hành và kiểm thử
 
 Bảng thao tác dưới đây áp dụng cho firmware tích hợp. Logic đã qua test host và còn chờ nghiệm thu trên board.

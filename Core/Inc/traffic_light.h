@@ -2,6 +2,7 @@
 #define TRAFFIC_LIGHT_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef enum {
     TRAFFIC_OFF = 0,
@@ -12,6 +13,8 @@ typedef enum {
 
 /* Call after GPIO setup and before traffic_set_pair(), from the main loop. */
 void traffic_init(void);
+/* Time since road 1's current color was applied to the GPIO. */
+uint32_t traffic_road1_elapsed_ms(void);
 
 /*
  * Changes the requested colors, removing the old green first on a handover.

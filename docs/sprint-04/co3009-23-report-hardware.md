@@ -96,7 +96,7 @@ T     = 200 × Traw / 2^20 - 50  (°C)
 `18 80 00 06 00 00 23` cho 25,0 °C và 50,0 %RH.
 
 Driver LCD hướng tới màn hình 16×2, bộ điều khiển HD44780 và backpack
-PCF8574(A). Địa chỉ `0x27` trong code là cấu hình tạm. Khởi tạo và
+PCF8574(A). Firmware tự dò địa chỉ trên bus LCD/DHT20. Khởi tạo và
 xóa thông qua `lcd_init()` và `lcd_clear()`. Các hàm
 `lcd_set_cursor()`, `lcd_print()` và `lcd_print_int()` cung cấp
 thao tác con trỏ, in chuỗi và số. `lcd_write_line()` cắt nội dung dài

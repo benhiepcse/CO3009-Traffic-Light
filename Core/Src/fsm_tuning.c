@@ -75,11 +75,12 @@ bool fsm_tuning_run(button_id_t button, traffic_timing_t *accepted)
 
 void fsm_tuning_format(char lines[FSM_LCD_ROWS][FSM_LCD_COLUMNS + 1])
 {
-    (void)snprintf(lines[0], FSM_LCD_COLUMNS + 1, "TUNE %s", fields[selected].name);
     if (invalid_input) {
-        (void)snprintf(lines[1], FSM_LCD_COLUMNS + 1, "R < G+Y+2");
+        (void)snprintf(lines[0], FSM_LCD_COLUMNS + 1, "%s: R < G+Y+2", fields[selected].name);
     } else {
-        (void)snprintf(lines[1], FSM_LCD_COLUMNS + 1, "%lu s",
-                       (unsigned long)*selected_value());
+        (void)snprintf(lines[0], FSM_LCD_COLUMNS + 1, "TUNE %s %lu s",
+                       fields[selected].name, (unsigned long)*selected_value());
     }
+    (void)snprintf(lines[1], FSM_LCD_COLUMNS + 1, "L1 RED %lus",
+                   (unsigned long)(traffic_road1_elapsed_ms() / 1000U));
 }

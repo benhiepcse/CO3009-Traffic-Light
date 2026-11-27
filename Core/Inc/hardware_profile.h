@@ -9,13 +9,13 @@
  * the traffic-light and button algorithms independent of wiring polarity.
  */
 #define TRAFFIC_ROAD1_RAW_OFF    0x00U
-#define TRAFFIC_ROAD1_RAW_RED    0x01U
-#define TRAFFIC_ROAD1_RAW_AMBER  0x03U
+#define TRAFFIC_ROAD1_RAW_RED    0x03U
+#define TRAFFIC_ROAD1_RAW_AMBER  0x01U
 #define TRAFFIC_ROAD1_RAW_GREEN  0x02U
 
 #define TRAFFIC_ROAD2_RAW_OFF    0x00U
-#define TRAFFIC_ROAD2_RAW_RED    0x01U
-#define TRAFFIC_ROAD2_RAW_AMBER  0x03U
+#define TRAFFIC_ROAD2_RAW_RED    0x03U
+#define TRAFFIC_ROAD2_RAW_AMBER  0x01U
 #define TRAFFIC_ROAD2_RAW_GREEN  0x02U
 
 #define BUTTON_D7_ACTIVE_LEVEL    1U

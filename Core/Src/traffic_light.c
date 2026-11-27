@@ -8,6 +8,7 @@
 #include "main.h"
 #else
 extern void traffic_test_write_raw(uint8_t road, uint8_t raw);
+extern uint32_t traffic_test_now_ms(void);
 #endif
 
 /* Four unique two-bit codes must use each of the four bit positions once. */
@@ -24,6 +25,21 @@ _Static_assert(VALID_COLOR_MAP(TRAFFIC_ROAD2_RAW_OFF, TRAFFIC_ROAD2_RAW_RED,
 
 static traffic_color_t current_road1 = TRAFFIC_RED;
 static traffic_color_t current_road2 = TRAFFIC_RED;
+static uint32_t road1_changed_ms;
+
+static uint32_t now_ms(void)
+{
+#ifdef TRAFFIC_LIGHT_HOST_TEST
+    return traffic_test_now_ms();
+#else
+    return HAL_GetTick();
+#endif
+}
+
+uint32_t traffic_road1_elapsed_ms(void)
+{
+    return now_ms() - road1_changed_ms;
+}
 
 static bool color_is_valid(traffic_color_t color)
 {
@@ -78,6 +94,9 @@ static void write_color(uint8_t road, traffic_color_t color)
     };
 
     write_road_raw(road, raw_by_road_and_color[road][color]);
+    if (road == 0U) {
+        road1_changed_ms = now_ms();
+    }
 }
 
 void traffic_init(void)

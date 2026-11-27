@@ -21,6 +21,7 @@ void sw_timer_init(void);
 void sw_timer_tick(void);
 bool sw_timer_start(sw_timer_id_t id, uint32_t duration_ticks);
 bool sw_timer_cancel(sw_timer_id_t id);
+uint32_t sw_timer_remaining_ticks(sw_timer_id_t id);
 bool sw_timer_take_timeout(sw_timer_id_t id);
 
 #endif

@@ -22,7 +22,8 @@ giả lập trên máy và build firmware được ghi riêng.
    thử bốn mã đèn. Mở serial USART2 115200 baud, 8N1 trước khi reset.
 3. So sánh số đo với `hardware_profile.h` và `CO3009_LCD_ADDRESS`.
    Ghi mọi sai khác trước khi nạp bản chạy đồng thời. DHT20 có địa chỉ
-   theo datasheet là `0x38`. `0x27` chỉ là địa chỉ LCD tạm trong code.
+   theo datasheet là `0x38`. Firmware tự dò backpack trên bus LCD/DHT20
+   hoặc dùng địa chỉ LCD cố định nếu đã đặt `CO3009_LCD_ADDRESS`.
 
 ### Bảng đo mã màu
 
@@ -46,7 +47,7 @@ giả lập trên máy và build firmware được ghi riêng.
 | Thiết bị | Địa chỉ 7 bit dự kiến | Địa chỉ quét được |
 | --- | --- | --- |
 | DHT20 | `0x38` | Chờ đo |
-| LCD | Theo backpack, code tạm `0x27` | Chờ đo |
+| LCD | Theo backpack PCF8574(A) | Chờ đo |
 
 ## Kiểm thử riêng rồi chạy đồng thời
 

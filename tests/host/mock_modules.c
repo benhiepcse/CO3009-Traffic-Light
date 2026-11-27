@@ -81,6 +81,7 @@ void SCH_Dispatch_Tasks(void)
 }
 
 static uint32_t timer_remaining;
+static uint32_t clock_ms;
 static bool timer_expired;
 static bool timer_start_fails;
 
@@ -93,6 +94,7 @@ void sw_timer_init(void)
 
 void sw_timer_tick(void)
 {
+    clock_ms += 10U;
     if (timer_remaining > 0) {
         --timer_remaining;
         if (timer_remaining == 0) {
@@ -124,6 +126,11 @@ bool sw_timer_cancel(sw_timer_id_t id)
 
     sw_timer_init();
     return true;
+}
+
+uint32_t sw_timer_remaining_ticks(sw_timer_id_t id)
+{
+    return id == SW_TIMER_TRAFFIC_PHASE ? timer_remaining : 0U;
 }
 
 bool sw_timer_take_timeout(sw_timer_id_t id)
@@ -187,9 +194,16 @@ static traffic_color_t road2_color;
 static uint32_t pair_requests;
 static uint32_t dual_green_requests;
 static bool traffic_pair_fails;
+static uint32_t road1_changed_ms;
+
+uint32_t traffic_road1_elapsed_ms(void)
+{
+    return clock_ms - road1_changed_ms;
+}
 
 void traffic_init(void)
 {
+    road1_changed_ms = clock_ms;
     road1_color = TRAFFIC_RED;
     road2_color = TRAFFIC_RED;
     pair_requests = 0;
@@ -218,6 +232,9 @@ bool traffic_set_pair(traffic_color_t road1, traffic_color_t road2)
         return false;
     }
 
+    if (road1 != road1_color) {
+        road1_changed_ms = clock_ms;
+    }
     road1_color = road1;
     road2_color = road2;
     return true;
@@ -324,6 +341,16 @@ bool lcd_write_line(uint8_t row, const char *text)
 
     memset(&lcd_lines[row][column], ' ', MOCK_LCD_COLUMNS - column);
     return true;
+}
+
+bool lcd_poll_ready(void)
+{
+    return lcd_ready;
+}
+
+void mock_lcd_disconnect(void)
+{
+    lcd_ready = false;
 }
 
 const char *mock_lcd_line(uint8_t row)

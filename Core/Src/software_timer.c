@@ -56,6 +56,11 @@ bool sw_timer_cancel(sw_timer_id_t id)
     return true;
 }
 
+uint32_t sw_timer_remaining_ticks(sw_timer_id_t id)
+{
+    return valid_id(id) ? timers[id].remaining_ticks : 0U;
+}
+
 bool sw_timer_take_timeout(sw_timer_id_t id)
 {
     if (!valid_id(id) || !timers[id].timeout) {

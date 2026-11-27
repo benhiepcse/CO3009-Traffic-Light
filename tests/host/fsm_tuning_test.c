@@ -21,8 +21,10 @@ static void expect_value(const char *title, const char *value)
 {
     char lines[FSM_LCD_ROWS][FSM_LCD_COLUMNS + 1];
     fsm_tuning_format(lines);
-    assert(strcmp(lines[0], title) == 0);
-    assert(strcmp(lines[1], value) == 0);
+    char expected[FSM_LCD_COLUMNS + 1];
+    snprintf(expected, sizeof expected, "%s %s", title, value);
+    assert(strcmp(lines[0], expected) == 0);
+    assert(strcmp(lines[1], "L1 RED 0s") == 0);
     assert(active_timing.red_seconds == 9);
 }
 
@@ -64,7 +66,7 @@ static void test_editing(void)
     accepted = (traffic_timing_t){ 60, 30, 5 };
     press_many(BUTTON_D10, 1);
     assert(!fsm_tuning_run(BUTTON_D7, &accepted));
-    expect_value("TUNE RED", "R < G+Y+2");
+    expect_value("RED:", "R < G+Y+2");
     assert(accepted.red_seconds == 60);
     press_many(BUTTON_D9, 1);
     assert(fsm_tuning_run(BUTTON_D7, &accepted));
