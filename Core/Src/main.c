@@ -19,7 +19,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #if defined(CO3009_HW_BRINGUP) && (defined(SCH_SELFTEST) || defined(CO3009_18_MEASURE))
@@ -40,7 +39,15 @@
 #include <string.h>
 #elif !defined(CO3009_DRIVER_DEMO)
 #include "scheduler.h"
+
+#ifndef SCH_SELFTEST
+#include "button.h"
+#include "dht20.h"
+#include "fsm.h"
+#include "lcd.h"
 #include "software_timer.h"
+#include "traffic_light.h"
+#endif
 #endif
 
 #ifdef SCH_SELFTEST
@@ -186,16 +193,20 @@ static void button_level_report(void)
 }
 #endif
 #if !defined(CO3009_HW_BRINGUP) && !defined(SCH_SELFTEST) && !defined(CO3009_DRIVER_DEMO)
-static void timer_10ms_task(void)
+static void control_10ms_task(void)
 {
 #ifdef CO3009_18_MEASURE
-    uint32_t index = timer_task_count;
+    const uint32_t index = timer_task_count;
+
     if (index < CO3009_18_SAMPLE_COUNT) {
         timer_task_ms[index] = HAL_GetTick();
         timer_task_count = index + 1U;
     }
 #endif
+
     sw_timer_tick();
+    button_poll();
+    fsm_run();
 }
 #endif
 
@@ -234,30 +245,40 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 #ifdef CO3009_DRIVER_DEMO
-  driver_demo_init(&huart2);
+    driver_demo_init(&huart2);
 #else
-#if defined(SCH_SELFTEST)
-  SCH_SelfTest_Init();
-#elif !defined(CO3009_HW_BRINGUP)
-  SCH_Init();
-  sw_timer_init();
 
-  if (SCH_Add_Task(timer_10ms_task, 1U, 1U) == 0U)
-  {
-      Error_Handler();
-  }
+#if defined(SCH_SELFTEST)
+    SCH_SelfTest_Init();
+#elif !defined(CO3009_HW_BRINGUP)
+    SCH_Init();
+
+    traffic_init();
+    button_init();
+    sw_timer_init();
+
+    /* Keep traffic control available if the LCD is absent. */
+    (void)lcd_init();
+
+    dht20_init();
+    fsm_init();
+
+    if (SCH_Add_Task(control_10ms_task, 1U, 1U) == 0U
+        || SCH_Add_Task(dht20_poll, 1U, 1U) == 0U) {
+        Error_Handler();
+    }
 #endif
 
-  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
-  if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK)
-  {
-      Error_Handler();
-  }
+    __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
+    if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK) {
+        Error_Handler();
+    }
 
 #ifdef CO3009_HW_BRINGUP
-  i2c_scan();
-  traffic_truth_table_test();
+    i2c_scan();
+    traffic_truth_table_test();
 #endif
+
 #endif
   /* USER CODE END 2 */
 

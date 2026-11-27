@@ -2,11 +2,10 @@
 #define HARDWARE_PROFILE_H
 
 /*
- * Provisional hardware profile.
+ * Provisional values. Verify each traffic module and button on the kit.
  *
- * CO3009-04 must replace these values after measuring the real modules.
- * Keeping the values here makes that board-dependent work explicit and keeps
- * the traffic-light and button algorithms independent of wiring polarity.
+ * Traffic code: bit 1 is signal A, bit 0 is signal B.
+ * Calculate the code as (A << 1) | B.
  */
 #define TRAFFIC_ROAD1_RAW_OFF    0x00U
 #define TRAFFIC_ROAD1_RAW_RED    0x01U
@@ -18,6 +17,7 @@
 #define TRAFFIC_ROAD2_RAW_AMBER  0x03U
 #define TRAFFIC_ROAD2_RAW_GREEN  0x02U
 
+/* Active level is the GPIO level measured while the button is pressed. */
 #define BUTTON_D7_ACTIVE_LEVEL    1U
 #define BUTTON_D8_ACTIVE_LEVEL    1U
 #define BUTTON_D9_ACTIVE_LEVEL    1U
@@ -27,7 +27,7 @@
 #if (BUTTON_D7_ACTIVE_LEVEL > 1U) || (BUTTON_D8_ACTIVE_LEVEL > 1U) || \
     (BUTTON_D9_ACTIVE_LEVEL > 1U) || (BUTTON_D10_ACTIVE_LEVEL > 1U) || \
     (BUTTON_USER_ACTIVE_LEVEL > 1U)
-#error Button active levels must be either 0 or 1
+#error "Button active levels must be either 0 or 1"
 #endif
 
-#endif
+#endif /* HARDWARE_PROFILE_H */
